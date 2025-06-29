@@ -45,23 +45,6 @@
             margin-bottom: 30px;
         }
 
-        .api-setup {
-            background: #f8f9fa;
-            border-radius: 10px;
-            padding: 10px;
-            margin-bottom: 30px;
-            border-left: 4px solid #667eea;
-        }
-
-        .api-input {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            font-size: 16px;
-            margin: 10px 0;
-        }
-
         .voice-controls {
             display: flex;
             gap: 20px;
@@ -199,47 +182,36 @@
         <!-- <h1 class="title">BOT</h1> -->
         <!-- <p class="subtitle">Voice-powered interview practice with AI</p> -->
 
-        <div class="api-setup" id="apiSetup">
-            <h3>Setup Required</h3>
-            <p>Enter your free Gemini API key to get started:</p>
-            <input type="password" id="apiKey" class="api-input" placeholder="Enter your Gemini API key here">
-            <button onclick="saveApiKey()" class="btn btn-primary">Save & Start</button>
-            <p style="margin-top: 10px; font-size: 14px; color: #666;">
-                Get your free API key at: <a href="https://makersuite.google.com/app/apikey" target="_blank">Google AI Studio</a>
-            </p>
+        <div class="voice-controls">
+            <button id="startBtn" onclick="startListening()" class="btn btn-primary">
+                Start
+            </button>
+            <button id="stopBtn" onclick="stopListening()" class="btn btn-secondary" disabled>
+                Stop
+            </button>
         </div>
 
-        <div id="mainApp" style="display: none;">
-            <div class="voice-controls">
-                <button id="startBtn" onclick="startListening()" class="btn btn-primary">
-                    Start
-                </button>
-                <button id="stopBtn" onclick="stopListening()" class="btn btn-secondary" disabled>
-                    Stop
-                </button>
-            </div>
+        <div id="status" class="status" style="display: none;"></div>
 
-            <div id="status" class="status" style="display: none;"></div>
+        <div class="conversation" id="conversation"></div>
 
-            <div class="conversation" id="conversation"></div>
-
-            <div class="example-questions">
-                <h3>Example Interview Questions:</h3>
-                <ul>
-                    <li>What should we know about your life story in a few sentences?</li>
-                    <li>What's your #1 superpower?</li>
-                    <li>What are the top 3 areas you'd like to grow in?</li>
-                    <li>What misconception do your coworkers have about you?</li>
-                    <li>How do you push your boundaries and limits?</li>
-                </ul>
-            </div>
+        <div class="example-questions">
+            <h3>Example Interview Questions:</h3>
+            <ul>
+                <li>What should we know about your life story in a few sentences?</li>
+                <li>What's your #1 superpower?</li>
+                <li>What are the top 3 areas you'd like to grow in?</li>
+                <li>What misconception do your coworkers have about you?</li>
+                <li>How do you push your boundaries and limits?</li>
+            </ul>
         </div>
         <p style="margin-top: 10px; font-size: 14px; color: #666;">Made by <a href="https://www.linkedin.com/in/tejas-shahade-956b30223" target="_blank">tejas shahade</a></p>
     </div>
     <script>
         let recognition;
         let isListening = false;
-        let apiKey = '';
+        
+        const apiKey = 'AIzaSyADaXW8rj30eBhe2Y9X7OOnGtL6nZVNW08';
 
         const personalResponses = {
             "life story": "My name is Tejas Shahade, and I am a software developer with 1.8 years of experience specializing in modern technologies. A software developer with a strong foundation in problem-solving and a genuine enthusiasm for embracing new technological landscapes. My experience at UpSolve Solutions has provided me with valuable opportunities to contribute to impactful projects, including the development of an AI-powered assistant designed to enhance user productivity and the construction of efficient and scalable APIs to streamline data flow.",
@@ -252,18 +224,6 @@
             
             "boundaries": "I push my boundaries by constantly taking on projects that are slightly outside my comfort zone. I set learning goals each quarter and actively seek out challenges that force me to grow. I also participate in hackathons and contribute to open source projects to expose myself to different coding styles and problem-solving approaches."
         };
-
-        function saveApiKey() {
-            const key = document.getElementById('apiKey').value.trim();
-            if (!key) {
-                alert('Please enter your API key');
-                return;
-            }
-            apiKey = key;
-            document.getElementById('apiSetup').style.display = 'none';
-            document.getElementById('mainApp').style.display = 'block';
-            initializeSpeechRecognition();
-        }
 
         function initializeSpeechRecognition() {
             if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
@@ -297,10 +257,21 @@
 
         function startListening() {
             if (!recognition) {
-                showStatus('Please set up your API key first', 'error');
+                showStatus('Initializing speech recognition...', '');
+                initializeSpeechRecognition();
+                
+                setTimeout(() => {
+                    if (recognition) {
+                        startListeningActual();
+                    }
+                }, 100);
                 return;
             }
 
+            startListeningActual();
+        }
+
+        function startListeningActual() {
             isListening = true;
             recognition.start();
             document.getElementById('startBtn').disabled = true;
@@ -321,14 +292,12 @@
         async function processQuestion(question) {
             showStatus('🤔 Thinking...', '');
             
-            // Find the best matching response
             const response = findBestResponse(question);
             
             if (response) {
                 addMessage('bot', response);
                 speakText(response);
             } else {
-                // Use Gemini API for general questions
                 try {
                     const aiResponse = await getGeminiResponse(question);
                     addMessage('bot', aiResponse);
@@ -421,6 +390,7 @@
 
         window.onload = function() {
             console.log('Voice Interview Bot loaded successfully!');
+            initializeSpeechRecognition();
         };
     </script>
 </body>
